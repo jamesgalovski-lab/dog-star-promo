@@ -455,7 +455,7 @@
     <!-- API KEY SECTION -->
     <div class="api-notice" id="apiNotice">
       <strong>🔑 OpenAI API Key Required</strong>
-      This page uses DALL·E 3 to generate images. Enter your OpenAI key below — it's stored only in your browser session and never sent anywhere except OpenAI.
+      This page uses DALL·E 3 to generate images. Enter your OpenAI key below — it's saved in your browser so you won't need to re-enter it.
       <div class="api-key-row">
         <input class="api-key-input" type="password" id="apiKeyInput" placeholder="sk-..." />
         <button class="api-save-btn" onclick="saveKey()">Save</button>
@@ -539,7 +539,7 @@
 
 <script>
   // ── STATE ──
-  let apiKey = sessionStorage.getItem('dogstar_openai_key') || '';
+  let apiKey = localStorage.getItem('dogstar_openai_key') || '';
   let imageBase64 = null;
   let imageMediaType = 'image/jpeg';
   let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
@@ -552,17 +552,18 @@
     const val = document.getElementById('apiKeyInput').value.trim();
     if (!val) return;
     apiKey = val;
-    sessionStorage.setItem('dogstar_openai_key', val);
+    localStorage.setItem('dogstar_openai_key', val);
     refreshKeyUI();
   }
   refreshKeyUI();
 
   // ── PROMPTS (from your index.js) ──
   const BASE_PROMPT = `
-You are generating a hyper-realistic AI sports photo of a dog.
-The dog's breed, markings, coat color, facial structure, and identity must be preserved exactly from the uploaded photo.
-Do not alter the dog's appearance in any way — no breed drift, no color change, no facial distortion.
-The final output must look like a real premium sports photograph, not an illustration or digital painting.
+You are generating a hyper-realistic AI sports photo of a specific dog.
+CRITICAL: The dog's exact breed, coat color, coat pattern, facial structure, markings, ear shape, and eye color must be preserved with absolute precision from the uploaded reference photo.
+Treat the uploaded photo as the ground truth — do not drift the breed, do not change the coat color, do not alter the facial structure in any way.
+The dog in the output must be immediately recognizable as the same individual dog from the photo.
+The final output must look like a real premium sports photograph shot by a professional photographer — not an illustration, painting, or digital art.
 Square 1:1 composition. Single dog only.
 `.trim();
 
@@ -583,21 +584,22 @@ Photorealistic skin/fur texture. Real stadium lighting. Real grass and environme
 `.trim();
 
   const GLOBAL_SOCCER_JERSEY_DIRECTIVES = `
-Wardrobe direction: the dog is wearing a modern custom USA women's tournament soccer jersey.
-Jersey details are critical:
-- white base performance athletic fabric
-- premium pro-level fit tailored naturally to the dog's body
-- realistic mesh texture, stitching, seams, collar structure, sleeve trim, and slight natural wrinkles
-- center chest: official TST crest (accurate proportions, colors, and structure)
-- exactly two stars above the crest, centered and evenly spaced
-- NO Nike logo
-- NO additional branding
-- NO extra sponsors
-- NO text elements anywhere else on the jersey
-The crest must be clean, sharp, readable, and professionally applied to the jersey.
-No distortion, warping, or stylization of the crest.
-The jersey must feel physically real, with natural tension across the chest and shoulders.
-Do not make the jersey oversized, loose like a costume, or cartoonish.
+Wardrobe direction: the dog is wearing a clean, plain white custom soccer jersey. This is NOT a Nike jersey. This is NOT a USWNT jersey. This is NOT any national team jersey.
+
+Jersey rules — read carefully:
+- PLAIN WHITE base fabric only — no stripes, no patterns, no sublimation graphics
+- NO Nike swoosh or logo anywhere on the jersey — not on chest, sleeve, or collar
+- NO USWNT crest, NO USA Soccer crest, NO federation badge of any kind on the left chest
+- NO player number on the front or back
+- NO sponsor logos, NO text, NO wordmarks anywhere on the jersey
+- The ONLY graphic element allowed: a single small TST tournament crest centered on the chest, with exactly two stars above it
+- Premium pro-level athletic fit tailored naturally to the dog's body
+- Realistic mesh texture, stitching, seams, collar structure, and slight natural wrinkles
+- Navy or red sleeve trim accent is acceptable
+- The jersey must feel physically real with natural tension across the chest and shoulders
+- Do not make the jersey oversized, loose like a costume, or cartoonish
+
+The jersey is a clean, minimal, custom tournament shirt. Think simple and professional — not a replica national team kit.
 `.trim();
 
   const SOCCER_CREST_FIDELITY = `
@@ -627,14 +629,20 @@ The crest should read as a premium professional tournament badge captured in a r
 `.trim();
 
   const NEGATIVE_PROMPT_SOCCER = `
-Do not add extra players, extra dogs, duplicated limbs, malformed paws, distorted muzzle, altered coat pattern, breed drift, cartoon eyes, oversized head, text, poster captions, watermarks, border frames, fantasy armor, random sponsorships, fake badges, warped crest, incorrect number of stars, or chaotic foreground clutter.
-Do not include Nike logos, NOBL logos, or any additional branding.
-Do not let the crest become asymmetrical, blurry, off-center, oversized, undersized, or unreadable.
-Do not allow the stars to merge into the crest or disappear into fabric folds.
-Do not let the background overpower the dog.
-Do not crop the ears.
-Do not crop the face.
-Do not reduce the dog to a small subject in a wide stadium shot.
+STRICTLY FORBIDDEN — do not include any of the following:
+- Nike swoosh or Nike logo anywhere
+- USWNT crest, USA Soccer badge, or any national federation crest on the left chest
+- Player numbers on front or back of jersey
+- Adidas, Puma, or any other sportswear brand logo
+- Stripes, sublimation patterns, or graphic designs on the jersey body
+- Extra players, extra dogs, duplicated limbs, malformed paws, distorted muzzle
+- Altered coat pattern, breed drift, cartoon eyes, oversized head
+- Text, poster captions, watermarks, border frames, fantasy armor
+- Random sponsorships, fake badges, warped crest, incorrect number of stars
+- Chaotic foreground clutter
+- Cropped ears or cropped face
+- Dog reduced to a small subject in a wide stadium shot
+- Background overpowering the dog
 `.trim();
 
   const PERSONA_PROMPT = `
