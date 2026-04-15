@@ -454,10 +454,10 @@
 
     <!-- API KEY SECTION -->
     <div class="api-notice" id="apiNotice">
-      <strong>🔑 API Key Required</strong>
-      This page uses the Anthropic API to generate images. Enter your key below — it's stored only in your browser session and never sent anywhere except Anthropic.
+      <strong>🔑 OpenAI API Key Required</strong>
+      This page uses DALL·E 3 to generate images. Enter your OpenAI key below — it's stored only in your browser session and never sent anywhere except OpenAI.
       <div class="api-key-row">
-        <input class="api-key-input" type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+        <input class="api-key-input" type="password" id="apiKeyInput" placeholder="sk-..." />
         <button class="api-save-btn" onclick="saveKey()">Save</button>
       </div>
     </div>
@@ -505,10 +505,10 @@
       <div class="loader"></div>
       <p>Suiting up your pup for the big match…</p>
       <ul class="loading-steps">
-        <li id="ls1">🎽 Tailoring the USWT jersey…</li>
-        <li id="ls2">🏟️ Building the stadium atmosphere…</li>
+        <li id="ls1">🔍 Analysing your dog's breed &amp; markings…</li>
+        <li id="ls2">🎽 Tailoring the USWT jersey…</li>
         <li id="ls3">⭐ Placing the TST crest &amp; two stars…</li>
-        <li id="ls4">📸 Capturing the hero shot…</li>
+        <li id="ls4">📸 Rendering the hero shot with DALL·E 3…</li>
       </ul>
     </div>
 
@@ -539,7 +539,7 @@
 
 <script>
   // ── STATE ──
-  let apiKey = sessionStorage.getItem('dogstar_key') || '';
+  let apiKey = sessionStorage.getItem('dogstar_openai_key') || '';
   let imageBase64 = null;
   let imageMediaType = 'image/jpeg';
   let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
@@ -552,7 +552,7 @@
     const val = document.getElementById('apiKeyInput').value.trim();
     if (!val) return;
     apiKey = val;
-    sessionStorage.setItem('dogstar_key', val);
+    sessionStorage.setItem('dogstar_openai_key', val);
     refreshKeyUI();
   }
   refreshKeyUI();
@@ -757,7 +757,7 @@ No additional logos or branding.
     errorEl.className = 'error-msg';
 
     if (!apiKey) {
-      errorEl.textContent = 'Please enter your Anthropic API key above.';
+      errorEl.textContent = 'Please enter your OpenAI API key above.';
       errorEl.className = 'error-msg active';
       return;
     }
@@ -776,78 +776,102 @@ No additional logos or branding.
     const prompt = buildPrompt(selectedVariant);
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // ── STEP 1: Use GPT-4o to analyse the dog photo and enrich the prompt ──
+      const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
+          'Authorization': 'Bearer ' + apiKey
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-5',
-          max_tokens: 1024,
+          model: 'gpt-4o',
+          max_tokens: 300,
           messages: [{
             role: 'user',
             content: [
               {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: imageMediaType,
-                  data: imageBase64
-                }
+                type: 'image_url',
+                image_url: { url: 'data:' + imageMediaType + ';base64,' + imageBase64, detail: 'high' }
               },
               {
                 type: 'text',
-                text: prompt + '\n\nIMPORTANT: Respond ONLY with a base64-encoded PNG image using a data URL format: data:image/png;base64,...  Do not include any text or explanation.'
+                text: 'Describe this dog in precise detail for an AI image generator: breed, coat color and pattern, fur length and texture, eye color, facial markings, ear shape, body size and build. Be concise — 3-4 sentences max. Start with "The dog is a..."'
               }
             ]
           }]
         })
       });
 
+      if (!visionResp.ok) {
+        const err = await visionResp.json().catch(() => ({}));
+        throw new Error('Vision step failed: ' + (err?.error?.message || `HTTP ${visionResp.status}`));
+      }
+
+      const visionData = await visionResp.json();
+      const dogDescription = visionData.choices?.[0]?.message?.content || '';
+
+      // ── STEP 2: Generate image with DALL·E 3 ──
+      const enrichedPrompt = `${dogDescription}\n\n${prompt}`;
+
+      // DALL·E 3 prompt limit is 4000 chars — trim if needed
+      const finalPrompt = enrichedPrompt.length > 3900
+        ? enrichedPrompt.substring(0, 3900) + '...'
+        : enrichedPrompt;
+
+      const imageResp = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: finalPrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'hd',
+          response_format: 'url'
+        })
+      });
+
       stopLoadingSteps();
       document.getElementById('loading').className = 'loading';
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `API error ${response.status}`);
+      if (!imageResp.ok) {
+        const err = await imageResp.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `Image generation error ${imageResp.status}`);
       }
 
-      const data = await response.json();
-      const text = (data.content || []).map(b => b.text || '').join('');
+      const imageData = await imageResp.json();
+      const imageUrl = imageData.data?.[0]?.url;
 
-      // Check if the response contains a data URL or just text describing the limitation
-      const dataUrlMatch = text.match(/data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+/);
+      if (!imageUrl) throw new Error('No image URL returned from DALL·E 3.');
 
-      if (dataUrlMatch) {
-        showResult(dataUrlMatch[0]);
-      } else {
-        // Claude can't generate images directly — show informative message
-        throw new Error(
-          "Claude text models can't generate images directly. " +
-          "To use this feature, connect this page to an image generation API " +
-          "(e.g. DALL·E 3, Stable Diffusion, or Ideogram) and pass the generated prompt to it. " +
-          "Your prompt was built successfully — see the browser console for the full prompt text."
-        );
-      }
+      showResult(imageUrl, false);
 
     } catch (err) {
       stopLoadingSteps();
       document.getElementById('loading').className = 'loading';
       console.error('Generation error:', err);
-      console.log('=== GENERATED PROMPT ===\n', buildPrompt(selectedVariant));
-      errorEl.innerHTML = '⚠️ ' + (err.message || 'Something went wrong. Check the console for details.');
+      errorEl.innerHTML = '⚠️ ' + (err.message || 'Something went wrong. Check the browser console for details.');
       errorEl.className = 'error-msg active';
       document.getElementById('generateBtn').disabled = false;
     }
   }
 
-  function showResult(dataUrl) {
+  function showResult(src, isDataUrl = true) {
     const resultImg = document.getElementById('resultImg');
     const downloadBtn = document.getElementById('downloadBtn');
-    resultImg.src = dataUrl;
-    downloadBtn.href = dataUrl;
+    resultImg.src = src;
+    if (isDataUrl) {
+      downloadBtn.href = src;
+      downloadBtn.removeAttribute('target');
+    } else {
+      // DALL·E returns a temporary URL — open in new tab for saving
+      downloadBtn.href = src;
+      downloadBtn.target = '_blank';
+      downloadBtn.title = 'Opens in new tab — right-click the image to save';
+    }
     document.getElementById('result').className = 'result active';
     document.getElementById('generateBtn').disabled = false;
   }
