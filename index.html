@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dog Star — USWT × TST</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0a1628;
+      --red:    #b22234;
+      --gold:   #d4a017;
+      --white:  #f4f0e8;
+      --mist:   #c8d6e8;
+      --card-bg: rgba(255,255,255,0.04);
+      --border:  rgba(212,160,23,0.25);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BACKGROUND ── */
+    .bg-field {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(178,34,52,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(212,160,23,0.10) 0%, transparent 60%),
+        linear-gradient(175deg, #0a1628 0%, #0d1f3c 60%, #0a1628 100%);
+    }
+    .bg-lines {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.04;
+      background-image:
+        linear-gradient(0deg, transparent 49%, rgba(255,255,255,0.8) 50%, transparent 51%),
+        linear-gradient(90deg, transparent 49%, rgba(255,255,255,0.8) 50%, transparent 51%);
+      background-size: 80px 80px;
+    }
+
+    /* ── LAYOUT ── */
+    .wrap { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── HEADER ── */
+    header {
+      padding: 48px 0 0;
+      text-align: center;
+      animation: fadeUp 0.8s ease both;
+    }
+    .eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(64px, 14vw, 128px);
+      line-height: 0.92;
+      letter-spacing: 0.02em;
+      color: var(--white);
+      text-shadow: 0 0 80px rgba(178,34,52,0.4);
+    }
+    h1 span { color: var(--red); }
+    .tagline {
+      margin: 20px auto 0;
+      max-width: 480px;
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--mist);
+      font-style: italic;
+    }
+
+    /* ── STARS ── */
+    .stars {
+      display: flex; justify-content: center; gap: 10px;
+      margin: 20px 0;
+    }
+    .stars span {
+      color: var(--gold);
+      font-size: 18px;
+      animation: twinkle 2s ease-in-out infinite;
+    }
+    .stars span:nth-child(2) { animation-delay: 0.3s; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 60px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 32px auto;
+    }
+
+    /* ── STEP BADGES ── */
+    .steps {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+    .step {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px 6px 6px;
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--mist);
+    }
+    .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      backdrop-filter: blur(10px);
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 2px dashed rgba(212,160,23,0.35);
+      border-radius: 14px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--gold);
+      background: rgba(212,160,23,0.06);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 40px; margin-bottom: 12px; line-height: 1; }
+    .upload-zone h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.05em;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .upload-zone p { font-size: 13px; color: var(--mist); font-weight: 300; }
+    .upload-preview {
+      display: none;
+      margin-top: 16px;
+      position: relative;
+    }
+    .upload-preview img {
+      max-height: 200px;
+      max-width: 100%;
+      border-radius: 10px;
+      border: 2px solid var(--gold);
+      object-fit: contain;
+    }
+    .remove-btn {
+      position: absolute; top: -8px; right: -8px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+
+    /* ── VARIANT SELECTOR ── */
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+      margin: 28px 0 12px;
+    }
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 600px) { .variants { grid-template-columns: 1fr; } }
+    .variant-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      color: var(--white);
+    }
+    .variant-btn:hover {
+      border-color: var(--gold);
+      background: rgba(212,160,23,0.08);
+    }
+    .variant-btn.active {
+      border-color: var(--gold);
+      background: rgba(212,160,23,0.14);
+      box-shadow: inset 0 0 0 1px var(--gold);
+    }
+    .variant-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px;
+      letter-spacing: 0.04em;
+      display: block;
+      margin-bottom: 3px;
+    }
+    .variant-desc { font-size: 11px; color: var(--mist); font-weight: 300; line-height: 1.4; }
+    .variant-check {
+      float: right;
+      color: var(--gold);
+      font-size: 14px;
+      display: none;
+    }
+    .variant-btn.active .variant-check { display: inline; }
+
+    /* ── GENERATE BUTTON ── */
+    .generate-btn {
+      margin-top: 28px;
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--red) 0%, #8b1a28 100%);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .generate-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      transition: left 0.5s;
+    }
+    .generate-btn:hover::before { left: 160%; }
+    .generate-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(178,34,52,0.4); }
+    .generate-btn:disabled {
+      opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;
+    }
+
+    /* ── LOADING ── */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 48px 20px;
+    }
+    .loading.active { display: block; }
+    .loader {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(212,160,23,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 20px;
+    }
+    .loading p {
+      font-size: 14px;
+      color: var(--mist);
+      font-weight: 300;
+      font-style: italic;
+    }
+    .loading-steps { list-style: none; margin-top: 16px; }
+    .loading-steps li {
+      font-size: 12px;
+      color: rgba(200,214,232,0.5);
+      padding: 3px 0;
+      transition: color 0.4s;
+    }
+    .loading-steps li.active { color: var(--gold); }
+
+    /* ── RESULT ── */
+    .result { display: none; margin-top: 32px; }
+    .result.active { display: block; animation: fadeUp 0.5s ease both; }
+    .result-label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .result img {
+      width: 100%;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      display: block;
+    }
+    .result-actions {
+      display: flex; gap: 10px; margin-top: 16px;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+      text-align: center;
+      text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .action-btn.download {
+      background: var(--gold);
+      color: var(--navy);
+      border: 1px solid var(--gold);
+    }
+    .action-btn.download:hover { background: #e6b020; }
+    .action-btn.retry {
+      background: transparent;
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .action-btn.retry:hover { border-color: var(--white); }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: none;
+      background: rgba(178,34,52,0.12);
+      border: 1px solid rgba(178,34,52,0.4);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #f8b4b4;
+    }
+    .error-msg.active { display: block; }
+
+    /* ── API KEY NOTICE ── */
+    .api-notice {
+      background: rgba(212,160,23,0.08);
+      border: 1px solid rgba(212,160,23,0.3);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: var(--mist);
+      font-weight: 300;
+    }
+    .api-notice strong { color: var(--gold); display: block; margin-bottom: 4px; }
+    .api-key-row {
+      display: flex; gap: 8px; margin-top: 10px;
+    }
+    .api-key-input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(212,160,23,0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--white);
+      font-size: 13px;
+      font-family: monospace;
+    }
+    .api-key-input:focus { outline: none; border-color: var(--gold); }
+    .api-key-input::placeholder { color: rgba(200,214,232,0.4); }
+    .api-save-btn {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 40px 24px 32px;
+      font-size: 12px;
+      color: rgba(200,214,232,0.35);
+      font-weight: 300;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-field"></div>
+<div class="bg-lines"></div>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <p class="eyebrow">USA Women's Tournament × TST Special Promo</p>
+    <h1>Dog<span>Star</span></h1>
+    <div class="stars">
+      <span>★</span><span>★</span>
+    </div>
+    <p class="tagline">Your dog. The pitch. The jersey. The legend.<br>Upload a photo and watch the magic happen.</p>
+    <div class="divider"></div>
+  </header>
+
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step"><span class="step-num">1</span> Upload your dog's photo</div>
+    <div class="step"><span class="step-num">2</span> Pick a scene variant</div>
+    <div class="step"><span class="step-num">3</span> Generate &amp; share</div>
+  </div>
+
+  <!-- MAIN CARD -->
+  <div class="card">
+
+    <!-- API KEY SECTION -->
+    <div class="api-notice" id="apiNotice">
+      <strong>🔑 API Key Required</strong>
+      This page uses the Anthropic API to generate images. Enter your key below — it's stored only in your browser session and never sent anywhere except Anthropic.
+      <div class="api-key-row">
+        <input class="api-key-input" type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+        <button class="api-save-btn" onclick="saveKey()">Save</button>
+      </div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="section-label">Your Dog's Photo</div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" />
+      <div class="upload-icon">🐾</div>
+      <h3>Drop a photo here</h3>
+      <p>JPG, PNG or WebP · max 10 MB</p>
+      <div class="upload-preview" id="uploadPreview">
+        <img id="previewImg" src="" alt="Dog preview" />
+        <button class="remove-btn" onclick="removeImage(event)">✕</button>
+      </div>
+    </div>
+
+    <!-- VARIANTS -->
+    <div class="section-label">Choose Your Scene</div>
+    <div class="variants">
+      <button class="variant-btn active" data-id="uswt_tst_real_heroic_goalmouth" onclick="selectVariant(this)">
+        <span class="variant-check">✓</span>
+        <span class="variant-name">Heroic Goalmouth</span>
+        <span class="variant-desc">Standing tall in front of the net, crowd roaring behind</span>
+      </button>
+      <button class="variant-btn" data-id="uswt_tst_real_matchday_captain" onclick="selectVariant(this)">
+        <span class="variant-check">✓</span>
+        <span class="variant-name">Matchday Captain</span>
+        <span class="variant-desc">Confident captain pose, editorial sports portrait</span>
+      </button>
+      <button class="variant-btn" data-id="uswt_tst_real_golden_hour_pitch" onclick="selectVariant(this)">
+        <span class="variant-check">✓</span>
+        <span class="variant-name">Golden Hour Pitch</span>
+        <span class="variant-desc">Cinematic warm light, ball at the paws</span>
+      </button>
+    </div>
+
+    <!-- GENERATE -->
+    <button class="generate-btn" id="generateBtn" onclick="generate()">
+      ⚽ Generate My Dog Star
+    </button>
+
+    <!-- LOADING -->
+    <div class="loading" id="loading">
+      <div class="loader"></div>
+      <p>Suiting up your pup for the big match…</p>
+      <ul class="loading-steps">
+        <li id="ls1">🎽 Tailoring the USWT jersey…</li>
+        <li id="ls2">🏟️ Building the stadium atmosphere…</li>
+        <li id="ls3">⭐ Placing the TST crest &amp; two stars…</li>
+        <li id="ls4">📸 Capturing the hero shot…</li>
+      </ul>
+    </div>
+
+    <!-- ERROR -->
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- RESULT -->
+    <div class="result" id="result">
+      <div class="result-label">⚽ Your Dog Star Is Ready</div>
+      <img id="resultImg" src="" alt="Generated dog star image" />
+      <div class="result-actions">
+        <a class="action-btn download" id="downloadBtn" download="dogstar.png">
+          ⬇ Download
+        </a>
+        <button class="action-btn retry" onclick="retryGenerate()">
+          🔄 Try Another Scene
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /card -->
+
+</div><!-- /wrap -->
+
+<footer>
+  <p>USWT × TST Dog Star Promo &nbsp;·&nbsp; Powered by AI &nbsp;·&nbsp; Images generated for personal fan use only</p>
+</footer>
+
+<script>
+  // ── STATE ──
+  let apiKey = sessionStorage.getItem('dogstar_key') || '';
+  let imageBase64 = null;
+  let imageMediaType = 'image/jpeg';
+  let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
+
+  // Show/hide API notice
+  function refreshKeyUI() {
+    document.getElementById('apiNotice').style.display = apiKey ? 'none' : 'block';
+  }
+  function saveKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val) return;
+    apiKey = val;
+    sessionStorage.setItem('dogstar_key', val);
+    refreshKeyUI();
+  }
+  refreshKeyUI();
+
+  // ── PROMPTS (from your index.js) ──
+  const BASE_PROMPT = `
+You are generating a hyper-realistic AI sports photo of a dog.
+The dog's breed, markings, coat color, facial structure, and identity must be preserved exactly from the uploaded photo.
+Do not alter the dog's appearance in any way — no breed drift, no color change, no facial distortion.
+The final output must look like a real premium sports photograph, not an illustration or digital painting.
+Square 1:1 composition. Single dog only.
+`.trim();
+
+  const GLOBAL_CINEMATIC_LAYER = `
+Cinematic production quality:
+- shallow depth of field with sharp subject and softly blurred background
+- professional sports photographer framing and composition
+- natural, realistic light with crisp highlights
+- no HDR over-processing, no over-saturation
+- no vignette borders or heavy post-processing artifacts
+`.trim();
+
+  const GLOBAL_REAL_STYLE = `
+Style: hyper-realistic premium sports photography.
+The image must be indistinguishable from a real photograph taken by a professional sports photographer.
+No illustration style, no painterly rendering, no cartoon elements, no sketch lines.
+Photorealistic skin/fur texture. Real stadium lighting. Real grass and environment textures.
+`.trim();
+
+  const GLOBAL_SOCCER_JERSEY_DIRECTIVES = `
+Wardrobe direction: the dog is wearing a modern custom USA women's tournament soccer jersey.
+Jersey details are critical:
+- white base performance athletic fabric
+- premium pro-level fit tailored naturally to the dog's body
+- realistic mesh texture, stitching, seams, collar structure, sleeve trim, and slight natural wrinkles
+- center chest: official TST crest (accurate proportions, colors, and structure)
+- exactly two stars above the crest, centered and evenly spaced
+- NO Nike logo
+- NO additional branding
+- NO extra sponsors
+- NO text elements anywhere else on the jersey
+The crest must be clean, sharp, readable, and professionally applied to the jersey.
+No distortion, warping, or stylization of the crest.
+The jersey must feel physically real, with natural tension across the chest and shoulders.
+Do not make the jersey oversized, loose like a costume, or cartoonish.
+`.trim();
+
+  const SOCCER_CREST_FIDELITY = `
+Crest fidelity is critical:
+The jersey must feature a single official TST-style crest centered on the chest.
+Crest requirements:
+- exact centered placement on the chest
+- accurate proportions and clean symmetrical structure
+- exactly two stars above the crest
+- stars centered above the crest, evenly spaced, proportional in size
+- crest edges must be sharp, clean, and readable
+- preserve the intended shield shape and internal layout
+- preserve strong color separation and clean line definition
+- crest must appear professionally applied to the jersey fabric
+- crest must follow natural fabric curvature without becoming distorted
+- maintain print clarity even with chest contour and jersey tension
+Do not:
+- invent alternate badge shapes
+- add extra stars
+- remove stars
+- place the crest off-center
+- warp the crest into unreadable shapes
+- replace the crest with generic soccer iconography
+- add text, fake sponsors, or substitute emblems
+- stylize the crest as a cartoon, sketch, patch, or fantasy badge
+The crest should read as a premium professional tournament badge captured in a real sports photograph.
+`.trim();
+
+  const NEGATIVE_PROMPT_SOCCER = `
+Do not add extra players, extra dogs, duplicated limbs, malformed paws, distorted muzzle, altered coat pattern, breed drift, cartoon eyes, oversized head, text, poster captions, watermarks, border frames, fantasy armor, random sponsorships, fake badges, warped crest, incorrect number of stars, or chaotic foreground clutter.
+Do not include Nike logos, NOBL logos, or any additional branding.
+Do not let the crest become asymmetrical, blurry, off-center, oversized, undersized, or unreadable.
+Do not allow the stars to merge into the crest or disappear into fabric folds.
+Do not let the background overpower the dog.
+Do not crop the ears.
+Do not crop the face.
+Do not reduce the dog to a small subject in a wide stadium shot.
+`.trim();
+
+  const PERSONA_PROMPT = `
+Persona direction: place the dog on a professional outdoor soccer pitch inside a packed modern stadium during a major international match atmosphere.
+Environment: premium stadium setting with a visible goal behind the dog, cheering supporters, waving US flags and scarves, high-energy match atmosphere, soft crowd blur for depth, and a polished championship-game feel.
+Composition: the dog is centered and dominant in the frame. Use a slightly low camera angle for a heroic sports-poster perspective. The goal should remain visible in the background. A match ball may sit near the dog's feet if compositionally helpful.
+Expression: confident, proud, alert, competitive, composed, spirited.
+Mood: elite tournament energy, premium sports campaign quality, patriotic crowd atmosphere, heroic but believable, highly shareable, crisp and editorial.
+Lighting: use bright natural stadium lighting or warm golden-hour sports-campaign lighting. Keep highlights crisp, shadows realistic, and the dog clearly separated from the background.
+Single dog only. Square 1:1 composition.
+`.trim();
+
+  const VARIANTS = {
+    uswt_tst_real_heroic_goalmouth: `
+Render as hyper-realistic premium sports photography.
+Place the dog standing confidently on lush professional pitch grass directly in front of a goal.
+Use a slightly low angle for heroic presence.
+Crowd behind the goal should be softly blurred, with visible US flags and scarves in motion.
+Keep the dog sharply focused and visually dominant.
+The jersey must be physically realistic with clean white performance fabric, centered TST crest, and exactly two stars above the crest.
+No additional logos or branding anywhere on the jersey.
+`.trim(),
+    uswt_tst_real_matchday_captain: `
+Render as a premium editorial sports portrait.
+Frame the dog in a composed captain-like stance on the field, with the stadium crowd and goal visible behind.
+The dog should feel confident, calm, and ready for a major match.
+Use a strong chest-forward posture to clearly showcase the centered crest placement.
+Maintain clean jersey structure and realistic fabric behavior.
+Preserve absolute identity fidelity from the uploaded dog photo.
+No additional branding beyond the centered crest and two stars.
+`.trim(),
+    uswt_tst_real_golden_hour_pitch: `
+Render as high-end golden-hour sports campaign photography.
+Use warm cinematic light across the field with a packed crowd softly blurred in the background.
+The dog stands powerfully near the goal with premium subject separation and realistic field texture.
+A soccer ball may appear near the front paws if it improves the composition.
+The jersey must look physically real with crisp white performance fabric, centered TST crest, and exactly two stars above it.
+Maintain elite realism and strong emotional presence.
+No additional logos or branding.
+`.trim()
+  };
+
+  function buildPrompt(variantId) {
+    return [
+      BASE_PROMPT,
+      GLOBAL_CINEMATIC_LAYER,
+      GLOBAL_REAL_STYLE,
+      GLOBAL_SOCCER_JERSEY_DIRECTIVES,
+      SOCCER_CREST_FIDELITY,
+      PERSONA_PROMPT,
+      VARIANTS[variantId],
+      NEGATIVE_PROMPT_SOCCER
+    ].filter(Boolean).join('\n\n');
+  }
+
+  // ── UPLOAD ──
+  const fileInput = document.getElementById('fileInput');
+  const uploadZone = document.getElementById('uploadZone');
+  const uploadPreview = document.getElementById('uploadPreview');
+  const previewImg = document.getElementById('previewImg');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) return;
+    imageMediaType = file.type;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      imageBase64 = dataUrl.split(',')[1];
+      previewImg.src = dataUrl;
+      uploadPreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage(e) {
+    e.stopPropagation();
+    imageBase64 = null;
+    previewImg.src = '';
+    uploadPreview.style.display = 'none';
+    fileInput.value = '';
+  }
+
+  // ── VARIANT SELECTION ──
+  function selectVariant(btn) {
+    document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedVariant = btn.dataset.id;
+  }
+
+  // ── LOADING STEPS ANIMATION ──
+  let lsInterval = null;
+  function animateLoadingSteps() {
+    const steps = ['ls1','ls2','ls3','ls4'];
+    let i = 0;
+    steps.forEach(id => document.getElementById(id).classList.remove('active'));
+    lsInterval = setInterval(() => {
+      if (i > 0) document.getElementById(steps[i-1]).classList.remove('active');
+      document.getElementById(steps[i]).classList.add('active');
+      i++;
+      if (i >= steps.length) { clearInterval(lsInterval); }
+    }, 1200);
+  }
+  function stopLoadingSteps() { clearInterval(lsInterval); }
+
+  // ── GENERATE ──
+  async function generate() {
+    const errorEl = document.getElementById('errorMsg');
+    errorEl.className = 'error-msg';
+
+    if (!apiKey) {
+      errorEl.textContent = 'Please enter your Anthropic API key above.';
+      errorEl.className = 'error-msg active';
+      return;
+    }
+    if (!imageBase64) {
+      errorEl.textContent = 'Please upload a photo of your dog first.';
+      errorEl.className = 'error-msg active';
+      return;
+    }
+
+    // UI state
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('loading').className = 'loading active';
+    document.getElementById('result').className = 'result';
+    animateLoadingSteps();
+
+    const prompt = buildPrompt(selectedVariant);
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1024,
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: imageMediaType,
+                  data: imageBase64
+                }
+              },
+              {
+                type: 'text',
+                text: prompt + '\n\nIMPORTANT: Respond ONLY with a base64-encoded PNG image using a data URL format: data:image/png;base64,...  Do not include any text or explanation.'
+              }
+            ]
+          }]
+        })
+      });
+
+      stopLoadingSteps();
+      document.getElementById('loading').className = 'loading';
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = (data.content || []).map(b => b.text || '').join('');
+
+      // Check if the response contains a data URL or just text describing the limitation
+      const dataUrlMatch = text.match(/data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+/);
+
+      if (dataUrlMatch) {
+        showResult(dataUrlMatch[0]);
+      } else {
+        // Claude can't generate images directly — show informative message
+        throw new Error(
+          "Claude text models can't generate images directly. " +
+          "To use this feature, connect this page to an image generation API " +
+          "(e.g. DALL·E 3, Stable Diffusion, or Ideogram) and pass the generated prompt to it. " +
+          "Your prompt was built successfully — see the browser console for the full prompt text."
+        );
+      }
+
+    } catch (err) {
+      stopLoadingSteps();
+      document.getElementById('loading').className = 'loading';
+      console.error('Generation error:', err);
+      console.log('=== GENERATED PROMPT ===\n', buildPrompt(selectedVariant));
+      errorEl.innerHTML = '⚠️ ' + (err.message || 'Something went wrong. Check the console for details.');
+      errorEl.className = 'error-msg active';
+      document.getElementById('generateBtn').disabled = false;
+    }
+  }
+
+  function showResult(dataUrl) {
+    const resultImg = document.getElementById('resultImg');
+    const downloadBtn = document.getElementById('downloadBtn');
+    resultImg.src = dataUrl;
+    downloadBtn.href = dataUrl;
+    document.getElementById('result').className = 'result active';
+    document.getElementById('generateBtn').disabled = false;
+  }
+
+  function retryGenerate() {
+    document.getElementById('result').className = 'result';
+    document.getElementById('errorMsg').className = 'error-msg';
+    document.getElementById('generateBtn').disabled = false;
+  }
+</script>
+</body>
+</html>
