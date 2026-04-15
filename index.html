@@ -452,16 +452,6 @@
   <!-- MAIN CARD -->
   <div class="card">
 
-    <!-- API KEY SECTION -->
-    <div class="api-notice" id="apiNotice">
-      <strong>🔑 OpenAI API Key Required</strong>
-      This page uses DALL·E 3 to generate images. Enter your OpenAI key below — it's saved in your browser so you won't need to re-enter it.
-      <div class="api-key-row">
-        <input class="api-key-input" type="password" id="apiKeyInput" placeholder="sk-..." />
-        <button class="api-save-btn" onclick="saveKey()">Save</button>
-      </div>
-    </div>
-
     <!-- UPLOAD -->
     <div class="section-label">Your Dog's Photo</div>
     <div class="upload-zone" id="uploadZone">
@@ -538,24 +528,13 @@
 </footer>
 
 <script>
+  // ── CONFIG ──
+  const WORKER_URL = 'https://nobl-poster-ai.shy-salad-2b90.workers.dev/api/dogstar-preview';
+
   // ── STATE ──
-  let apiKey = localStorage.getItem('dogstar_openai_key') || '';
   let imageBase64 = null;
   let imageMediaType = 'image/jpeg';
   let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
-
-  // Show/hide API notice
-  function refreshKeyUI() {
-    document.getElementById('apiNotice').style.display = apiKey ? 'none' : 'block';
-  }
-  function saveKey() {
-    const val = document.getElementById('apiKeyInput').value.trim();
-    if (!val) return;
-    apiKey = val;
-    localStorage.setItem('dogstar_openai_key', val);
-    refreshKeyUI();
-  }
-  refreshKeyUI();
 
   // ── PROMPTS (from your index.js) ──
   const BASE_PROMPT = `
@@ -584,48 +563,27 @@ Photorealistic skin/fur texture. Real stadium lighting. Real grass and environme
 `.trim();
 
   const GLOBAL_SOCCER_JERSEY_DIRECTIVES = `
-Wardrobe direction: the dog is wearing a clean, plain white custom soccer jersey. This is NOT a Nike jersey. This is NOT a USWNT jersey. This is NOT any national team jersey.
+The dog is wearing a plain white athletic soccer jersey. Describe the jersey exactly as follows:
 
-Jersey rules — read carefully:
-- PLAIN WHITE base fabric only — no stripes, no patterns, no sublimation graphics
-- NO Nike swoosh or logo anywhere on the jersey — not on chest, sleeve, or collar
-- NO USWNT crest, NO USA Soccer crest, NO federation badge of any kind on the left chest
-- NO player number on the front or back
-- NO sponsor logos, NO text, NO wordmarks anywhere on the jersey
-- The ONLY graphic element allowed: a single small TST tournament crest centered on the chest, with exactly two stars above it
-- Premium pro-level athletic fit tailored naturally to the dog's body
-- Realistic mesh texture, stitching, seams, collar structure, and slight natural wrinkles
-- Navy or red sleeve trim accent is acceptable
-- The jersey must feel physically real with natural tension across the chest and shoulders
-- Do not make the jersey oversized, loose like a costume, or cartoonish
-
-The jersey is a clean, minimal, custom tournament shirt. Think simple and professional — not a replica national team kit.
+- Solid white performance fabric, V-neck collar with a thin navy trim
+- NO sportswear brand logo of any kind — no Nike swoosh, no Adidas stripes, no Puma, no Under Armour, nothing
+- NO national team badge, NO federation crest, NO USA Soccer shield
+- NO player number anywhere on the jersey
+- NO text, NO wordmarks, NO sponsor patches
+- On the CENTER of the chest: one small simple shield-shaped badge in navy and red, with two small gold stars centered above it. The badge contains only abstract geometric lines — no letters, no text, no real-world logos
+- The jersey fits naturally on the dog's body — tailored, athletic, not a costume
+- Realistic fabric texture with natural wrinkles and light play across the mesh
 `.trim();
 
   const SOCCER_CREST_FIDELITY = `
-Crest fidelity is critical:
-The jersey must feature a single official TST-style crest centered on the chest.
-Crest requirements:
-- exact centered placement on the chest
-- accurate proportions and clean symmetrical structure
-- exactly two stars above the crest
-- stars centered above the crest, evenly spaced, proportional in size
-- crest edges must be sharp, clean, and readable
-- preserve the intended shield shape and internal layout
-- preserve strong color separation and clean line definition
-- crest must appear professionally applied to the jersey fabric
-- crest must follow natural fabric curvature without becoming distorted
-- maintain print clarity even with chest contour and jersey tension
-Do not:
-- invent alternate badge shapes
-- add extra stars
-- remove stars
-- place the crest off-center
-- warp the crest into unreadable shapes
-- replace the crest with generic soccer iconography
-- add text, fake sponsors, or substitute emblems
-- stylize the crest as a cartoon, sketch, patch, or fantasy badge
-The crest should read as a premium professional tournament badge captured in a real sports photograph.
+Badge description — render exactly this and nothing else on the jersey chest:
+- A small shield shape, centered on the chest
+- Navy blue and red color scheme
+- Two small gold five-pointed stars centered directly above the shield, evenly spaced
+- The shield contains simple abstract geometric lines only — no real-world logos, no text, no letters
+- The badge is cleanly heat-pressed onto the white fabric — sharp edges, no blurring
+- No sportswear manufacturer logo appears anywhere near or on the badge
+- No additional badge, patch, or logo anywhere else on the jersey
 `.trim();
 
   const NEGATIVE_PROMPT_SOCCER = `
@@ -764,122 +722,58 @@ No additional logos or branding.
     const errorEl = document.getElementById('errorMsg');
     errorEl.className = 'error-msg';
 
-    if (!apiKey) {
-      errorEl.textContent = 'Please enter your OpenAI API key above.';
-      errorEl.className = 'error-msg active';
-      return;
-    }
     if (!imageBase64) {
       errorEl.textContent = 'Please upload a photo of your dog first.';
       errorEl.className = 'error-msg active';
       return;
     }
 
-    // UI state
     document.getElementById('generateBtn').disabled = true;
     document.getElementById('loading').className = 'loading active';
     document.getElementById('result').className = 'result';
     animateLoadingSteps();
 
-    const prompt = buildPrompt(selectedVariant);
-
     try {
-      // ── STEP 1: Use GPT-4o to analyse the dog photo and enrich the prompt ──
-      const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
+      const resp = await fetch(WORKER_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'gpt-4o',
-          max_tokens: 300,
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: { url: 'data:' + imageMediaType + ';base64,' + imageBase64, detail: 'high' }
-              },
-              {
-                type: 'text',
-                text: 'Describe this dog in precise detail for an AI image generator: breed, coat color and pattern, fur length and texture, eye color, facial markings, ear shape, body size and build. Be concise — 3-4 sentences max. Start with "The dog is a..."'
-              }
-            ]
-          }]
-        })
-      });
-
-      if (!visionResp.ok) {
-        const err = await visionResp.json().catch(() => ({}));
-        throw new Error('Vision step failed: ' + (err?.error?.message || `HTTP ${visionResp.status}`));
-      }
-
-      const visionData = await visionResp.json();
-      const dogDescription = visionData.choices?.[0]?.message?.content || '';
-
-      // ── STEP 2: Generate image with DALL·E 3 ──
-      const enrichedPrompt = `${dogDescription}\n\n${prompt}`;
-
-      // DALL·E 3 prompt limit is 4000 chars — trim if needed
-      const finalPrompt = enrichedPrompt.length > 3900
-        ? enrichedPrompt.substring(0, 3900) + '...'
-        : enrichedPrompt;
-
-      const imageResp = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt: finalPrompt,
-          n: 1,
-          size: '1024x1024',
-          quality: 'hd',
-          response_format: 'url'
+          image_base64: imageBase64,
+          image_media_type: imageMediaType,
+          variant_id: selectedVariant
         })
       });
 
       stopLoadingSteps();
       document.getElementById('loading').className = 'loading';
 
-      if (!imageResp.ok) {
-        const err = await imageResp.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `Image generation error ${imageResp.status}`);
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err?.error || `Worker error ${resp.status}`);
       }
 
-      const imageData = await imageResp.json();
-      const imageUrl = imageData.data?.[0]?.url;
-
-      if (!imageUrl) throw new Error('No image URL returned from DALL·E 3.');
-
-      showResult(imageUrl, false);
+      // Worker returns raw PNG bytes
+      const blob = await resp.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      showResult(objectUrl);
 
     } catch (err) {
       stopLoadingSteps();
       document.getElementById('loading').className = 'loading';
       console.error('Generation error:', err);
-      errorEl.innerHTML = '⚠️ ' + (err.message || 'Something went wrong. Check the browser console for details.');
+      errorEl.innerHTML = '⚠️ ' + (err.message || 'Something went wrong. Check the browser console.');
       errorEl.className = 'error-msg active';
       document.getElementById('generateBtn').disabled = false;
     }
   }
 
-  function showResult(src, isDataUrl = true) {
+  function showResult(objectUrl) {
     const resultImg = document.getElementById('resultImg');
     const downloadBtn = document.getElementById('downloadBtn');
-    resultImg.src = src;
-    if (isDataUrl) {
-      downloadBtn.href = src;
-      downloadBtn.removeAttribute('target');
-    } else {
-      // DALL·E returns a temporary URL — open in new tab for saving
-      downloadBtn.href = src;
-      downloadBtn.target = '_blank';
-      downloadBtn.title = 'Opens in new tab — right-click the image to save';
-    }
+    resultImg.src = objectUrl;
+    downloadBtn.href = objectUrl;
+    downloadBtn.download = 'dogstar.png';
+    downloadBtn.removeAttribute('target');
     document.getElementById('result').className = 'result active';
     document.getElementById('generateBtn').disabled = false;
   }
