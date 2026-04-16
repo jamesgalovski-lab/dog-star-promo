@@ -537,186 +537,124 @@
   let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
 
   // ── PROMPTS (from your index.js) ──
-// ======================================
-// NOBL DOGSTAR — CLEAN GENERATION + OVERLAY
-// ======================================
+  const BASE_PROMPT = `
+You are generating a hyper-realistic AI sports photo of a specific dog.
+CRITICAL: The dog's exact breed, coat color, coat pattern, facial structure, markings, ear shape, and eye color must be preserved with absolute precision from the uploaded reference photo.
+Treat the uploaded photo as the ground truth — do not drift the breed, do not change the coat color, do not alter the facial structure in any way.
+The dog in the output must be immediately recognizable as the same individual dog from the photo.
+The final output must look like a real premium sports photograph shot by a professional photographer — not an illustration, painting, or digital art.
+Square 1:1 composition. Single dog only.
+`.trim();
 
+  const GLOBAL_CINEMATIC_LAYER = `
+Cinematic production quality:
+- shallow depth of field with sharp subject and softly blurred background
+- professional sports photographer framing and composition
+- natural, realistic light with crisp highlights
+- no HDR over-processing, no over-saturation
+- no vignette borders or heavy post-processing artifacts
+`.trim();
 
-// ---------- PROMPT ----------
-const DOGSTAR_PROMPT = `
-Create a realistic photograph of the SAME dog from the uploaded image.
+  const GLOBAL_REAL_STYLE = `
+Style: hyper-realistic premium sports photography.
+The image must be indistinguishable from a real photograph taken by a professional sports photographer.
+No illustration style, no painterly rendering, no cartoon elements, no sketch lines.
+Photorealistic skin/fur texture. Real stadium lighting. Real grass and environment textures.
+`.trim();
 
-The dog must remain completely natural:
-- natural posture (on all fours or seated)
-- no human stance
-- no anthropomorphism
-- no human-like posing
+  const GLOBAL_SOCCER_JERSEY_DIRECTIVES = `
+The dog is wearing a plain white athletic soccer jersey. Describe the jersey exactly as follows:
 
-Preserve exact identity:
-- coat pattern
-- facial markings
-- eye shape and color
-- muzzle and ear structure
-- proportions
+- Solid white performance fabric, V-neck collar with a thin navy trim
+- NO sportswear brand logo of any kind — no Nike swoosh, no Adidas stripes, no Puma, no Under Armour, nothing
+- NO national team badge, NO federation crest, NO USA Soccer shield
+- NO player number anywhere on the jersey
+- NO text, NO wordmarks, NO sponsor patches
+- On the CENTER of the chest: one small simple shield-shaped badge in navy and red, with two small gold stars centered above it. The badge contains only abstract geometric lines — no letters, no text, no real-world logos
+- The jersey fits naturally on the dog's body — tailored, athletic, not a costume
+- Realistic fabric texture with natural wrinkles and light play across the mesh
+`.trim();
 
-The dog is wearing a completely plain white soccer jersey.
+  const SOCCER_CREST_FIDELITY = `
+Badge description — render exactly this and nothing else on the jersey chest:
+- A small shield shape, centered on the chest
+- Navy blue and red color scheme
+- Two small gold five-pointed stars centered directly above the shield, evenly spaced
+- The shield contains simple abstract geometric lines only — no real-world logos, no text, no letters
+- The badge is cleanly heat-pressed onto the white fabric — sharp edges, no blurring
+- No sportswear manufacturer logo appears anywhere near or on the badge
+- No additional badge, patch, or logo anywhere else on the jersey
+`.trim();
 
-CRITICAL:
-The jersey must be completely blank.
-- no logos
-- no crests
-- no symbols
-- no text
-- no numbers
-- no branding of any kind
+  const NEGATIVE_PROMPT_SOCCER = `
+STRICTLY FORBIDDEN — do not include any of the following:
+- Nike swoosh or Nike logo anywhere
+- USWNT crest, USA Soccer badge, or any national federation crest on the left chest
+- Player numbers on front or back of jersey
+- Adidas, Puma, or any other sportswear brand logo
+- Stripes, sublimation patterns, or graphic designs on the jersey body
+- Extra players, extra dogs, duplicated limbs, malformed paws, distorted muzzle
+- Altered coat pattern, breed drift, cartoon eyes, oversized head
+- Text, poster captions, watermarks, border frames, fantasy armor
+- Random sponsorships, fake badges, warped crest, incorrect number of stars
+- Chaotic foreground clutter
+- Cropped ears or cropped face
+- Dog reduced to a small subject in a wide stadium shot
+- Background overpowering the dog
+`.trim();
 
-The jersey should look like clean athletic fabric:
-- realistic seams
-- natural wrinkles
-- correct fit on a dog (not tight, not oversized)
+  const PERSONA_PROMPT = `
+Persona direction: place the dog on a professional outdoor soccer pitch inside a packed modern stadium during a major international match atmosphere.
+Environment: premium stadium setting with a visible goal behind the dog, cheering supporters, waving US flags and scarves, high-energy match atmosphere, soft crowd blur for depth, and a polished championship-game feel.
+Composition: the dog is centered and dominant in the frame. Use a slightly low camera angle for a heroic sports-poster perspective. The goal should remain visible in the background. A match ball may sit near the dog's feet if compositionally helpful.
+Expression: confident, proud, alert, competitive, composed, spirited.
+Mood: elite tournament energy, premium sports campaign quality, patriotic crowd atmosphere, heroic but believable, highly shareable, crisp and editorial.
+Lighting: use bright natural stadium lighting or warm golden-hour sports-campaign lighting. Keep highlights crisp, shadows realistic, and the dog clearly separated from the background.
+Single dog only. Square 1:1 composition.
+`.trim();
 
-Environment:
-- real soccer field
-- goal in background
-- stadium softly blurred
+  const VARIANTS = {
+    uswt_tst_real_heroic_goalmouth: `
+Render as hyper-realistic premium sports photography.
+Place the dog standing confidently on lush professional pitch grass directly in front of a goal.
+Use a slightly low angle for heroic presence.
+Crowd behind the goal should be softly blurred, with visible US flags and scarves in motion.
+Keep the dog sharply focused and visually dominant.
+The jersey must be physically realistic with clean white performance fabric, centered TST crest, and exactly two stars above the crest.
+No additional logos or branding anywhere on the jersey.
+`.trim(),
+    uswt_tst_real_matchday_captain: `
+Render as a premium editorial sports portrait.
+Frame the dog in a composed captain-like stance on the field, with the stadium crowd and goal visible behind.
+The dog should feel confident, calm, and ready for a major match.
+Use a strong chest-forward posture to clearly showcase the centered crest placement.
+Maintain clean jersey structure and realistic fabric behavior.
+Preserve absolute identity fidelity from the uploaded dog photo.
+No additional branding beyond the centered crest and two stars.
+`.trim(),
+    uswt_tst_real_golden_hour_pitch: `
+Render as high-end golden-hour sports campaign photography.
+Use warm cinematic light across the field with a packed crowd softly blurred in the background.
+The dog stands powerfully near the goal with premium subject separation and realistic field texture.
+A soccer ball may appear near the front paws if it improves the composition.
+The jersey must look physically real with crisp white performance fabric, centered TST crest, and exactly two stars above it.
+Maintain elite realism and strong emotional presence.
+No additional logos or branding.
+`.trim()
+  };
 
-Lighting:
-- natural daylight or soft stadium lighting
-- no cinematic effects
-
-The dog must be centered and dominant in a square 1:1 composition.
-`;
-
-
-// ---------- MAIN HANDLER ----------
-export async function handleDogstarPreview(request, env, reqId) {
-  const body = await request.json().catch(() => null);
-  if (!body) {
-    return json(400, { error: "Invalid JSON body.", reqId });
+  function buildPrompt(variantId) {
+    return [
+      BASE_PROMPT,
+      GLOBAL_CINEMATIC_LAYER,
+      GLOBAL_REAL_STYLE,
+      GLOBAL_SOCCER_JERSEY_DIRECTIVES,
+      SOCCER_CREST_FIDELITY,
+      PERSONA_PROMPT,
+      VARIANTS[variantId],
+      NEGATIVE_PROMPT_SOCCER
+    ].filter(Boolean).join('\n\n');
   }
-
-  const imageBase64 = body?.image_base64;
-  if (!imageBase64) {
-    return json(400, { error: "image_base64 is required.", reqId });
-  }
-
-  // ---------- GENERATE IMAGE ----------
-  const aiRes = await fetch("https://api.openai.com/v1/images/edits", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`
-    },
-    body: createFormData(imageBase64, DOGSTAR_PROMPT)
-  });
-
-  if (!aiRes.ok) {
-    const err = await aiRes.text();
-    return json(500, { error: "AI generation failed", details: err, reqId });
-  }
-
-  const aiJson = await aiRes.json();
-  const generatedBase64 = aiJson.data?.[0]?.b64_json;
-
-  if (!generatedBase64) {
-    return json(500, { error: "No image returned from AI", reqId });
-  }
-
-  // ---------- OVERLAY NUMBER ----------
-  const finalImageBase64 = await overlayNumber10(generatedBase64);
-
-  return json(200, {
-    image_base64: finalImageBase64,
-    reqId
-  });
-}
-
-
-// ---------- FORM DATA BUILDER ----------
-function createFormData(imageBase64, prompt) {
-  const form = new FormData();
-
-  const byteCharacters = atob(imageBase64);
-  const byteNumbers = new Array(byteCharacters.length)
-    .fill(0)
-    .map((_, i) => byteCharacters.charCodeAt(i));
-  const byteArray = new Uint8Array(byteNumbers);
-
-  const blob = new Blob([byteArray], { type: "image/png" });
-
-  form.append("image", blob, "input.png");
-  form.append("prompt", prompt);
-  form.append("size", "1024x1024");
-
-  return form;
-}
-
-
-// ---------- OVERLAY FUNCTION ----------
-async function overlayNumber10(base64Image) {
-  const img = await loadImageFromBase64(base64Image);
-
-  const canvas = new OffscreenCanvas(img.width, img.height);
-  const ctx = canvas.getContext("2d");
-
-  // draw base image
-  ctx.drawImage(img, 0, 0);
-
-  // ---------- POSITIONING ----------
-  const centerX = canvas.width / 2;
-
-  // chest area heuristic (~60% height)
-  const chestY = canvas.height * 0.62;
-
-  // font size scales with image
-  const fontSize = canvas.width * 0.18;
-
-  ctx.font = `bold ${fontSize}px Arial`;
-  ctx.fillStyle = "#0A2342"; // navy
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillText("10", centerX, chestY);
-
-  // export
-  const blob = await canvas.convertToBlob({ type: "image/png" });
-  const buffer = await blob.arrayBuffer();
-
-  return arrayBufferToBase64(buffer);
-}
-
-
-// ---------- HELPERS ----------
-async function loadImageFromBase64(base64) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  const blob = new Blob([bytes], { type: "image/png" });
-  const bitmap = await createImageBitmap(blob);
-  return bitmap;
-}
-
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-
-  return btoa(binary);
-}
-
-function json(status, data) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" }
-  });
-}
 
   // ── UPLOAD ──
   const fileInput = document.getElementById('fileInput');
