@@ -537,124 +537,170 @@
   let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
 
   // ── PROMPTS (from your index.js) ──
-  const BASE_PROMPT = `
-You are generating a hyper-realistic AI sports photo of a specific dog.
-CRITICAL: The dog's exact breed, coat color, coat pattern, facial structure, markings, ear shape, and eye color must be preserved with absolute precision from the uploaded reference photo.
-Treat the uploaded photo as the ground truth — do not drift the breed, do not change the coat color, do not alter the facial structure in any way.
-The dog in the output must be immediately recognizable as the same individual dog from the photo.
-The final output must look like a real premium sports photograph shot by a professional photographer — not an illustration, painting, or digital art.
-Square 1:1 composition. Single dog only.
+  const DOGSTAR_BASE_LOCK = `
+Create a high-quality square poster portrait of the same dog from the input photo.
+
+Treat the input photo as the definitive identity reference for the dog.
+The generated dog must clearly be the same individual dog from the uploaded photo.
+
+Strictly preserve:
+- exact coat pattern
+- exact facial markings
+- fur colors
+- muzzle shape
+- eye shape and color
+- ear shape
+- facial proportions
+- head shape
+- overall expression
+
+Do not redesign, idealize, stylize, or substitute the dog with a generic breed example.
+The dog must remain anatomically believable and immediately recognizable as the same uploaded dog.
+
+Single dog only.
+Square 1:1 composition.
+The dog must remain the dominant subject in the frame.
+
+The dog is wearing a professional white soccer jersey:
+- modern athletic fit
+- realistic fabric tension, seams, stitching, and subtle wrinkles
+- tailored naturally to the dog's body
+- not oversized
+- not costume-like
+
+Crest requirements are critical:
+- one centered shield-shaped crest on the chest
+- clean, sharp, symmetrical geometry
+- navy blue, red, white, and light gray color palette
+- large bold "US" at top of crest
+- centered soccer ball integrated into a winged American-flag-style banner
+- curved navy ribbon below with "US WOMEN" in white uppercase text
+- exactly TWO stars above the crest, centered and evenly spaced
+- no distortion, no warping, no redesign
+
+No Nike logo.
+No Adidas logo.
+No Puma logo.
+No NOBL logo.
+No sponsors.
+No extra text.
+No player number.
+No additional branding.
+
+Do not add extra dogs, duplicate features, extra limbs, distorted anatomy,
+cropped face, cropped ears, clutter, poster text, captions, watermarks, borders, or frames.
+
+Render as hyper-realistic professional sports photography.
 `.trim();
 
-  const GLOBAL_CINEMATIC_LAYER = `
-Cinematic production quality:
-- shallow depth of field with sharp subject and softly blurred background
-- professional sports photographer framing and composition
-- natural, realistic light with crisp highlights
-- no HDR over-processing, no over-saturation
-- no vignette borders or heavy post-processing artifacts
+const DOGSTAR_ENVIRONMENT = `
+Place the dog on a professional outdoor soccer pitch inside a packed modern stadium.
+
+Environment:
+- visible goal behind the dog
+- cheering crowd softly blurred for depth
+- waving US flags and scarves
+- premium international match atmosphere
+
+Composition:
+- dog centered and dominant
+- slightly low camera angle for heroic sports-poster presence
+
+Lighting:
+- bright natural stadium lighting or warm golden-hour sports lighting
+- clean highlights
+- realistic shadows
+- strong separation between dog and background
+
+The background must never overpower the dog.
 `.trim();
 
-  const GLOBAL_REAL_STYLE = `
-Style: hyper-realistic premium sports photography.
-The image must be indistinguishable from a real photograph taken by a professional sports photographer.
-No illustration style, no painterly rendering, no cartoon elements, no sketch lines.
-Photorealistic skin/fur texture. Real stadium lighting. Real grass and environment textures.
+const DOGSTAR_NEGATIVE = `
+STRICTLY DO NOT RENDER:
+- extra dogs
+- extra players
+- duplicated limbs
+- distorted anatomy
+- altered coat pattern
+- breed drift
+- cartoon or illustrated styling
+- oversized head
+- warped muzzle
+- cropped ears
+- cropped face
+- dog as a small subject in the frame
+
+STRICTLY DO NOT ADD:
+- Nike swoosh
+- Adidas logo
+- Puma logo
+- Under Armour logo
+- NOBL logo
+- sponsor marks
+- random text
+- poster captions
+- watermarks
+- frame borders
+
+STRICTLY DO NOT BREAK:
+- crest symmetry
+- crest readability
+- two-star requirement
+- centered chest placement
 `.trim();
 
-  const GLOBAL_SOCCER_JERSEY_DIRECTIVES = `
-The dog is wearing a plain white athletic soccer jersey. Describe the jersey exactly as follows:
+const DOGSTAR_VARIANTS = {
+  uswt_tst_real_heroic_goalmouth: `
+Heroic sports poster composition.
 
-- Solid white performance fabric, V-neck collar with a thin navy trim
-- NO sportswear brand logo of any kind — no Nike swoosh, no Adidas stripes, no Puma, no Under Armour, nothing
-- NO national team badge, NO federation crest, NO USA Soccer shield
-- NO player number anywhere on the jersey
-- NO text, NO wordmarks, NO sponsor patches
-- On the CENTER of the chest: one small simple shield-shaped badge in navy and red, with two small gold stars centered above it. The badge contains only abstract geometric lines — no letters, no text, no real-world logos
-- The jersey fits naturally on the dog's body — tailored, athletic, not a costume
-- Realistic fabric texture with natural wrinkles and light play across the mesh
-`.trim();
+Dog standing confidently on lush pitch grass directly in front of the goal.
+Use a slightly low camera angle for strong heroic presence.
+Crowd behind goal softly blurred with flags in motion.
 
-  const SOCCER_CREST_FIDELITY = `
-Badge description — render exactly this and nothing else on the jersey chest:
-- A small shield shape, centered on the chest
-- Navy blue and red color scheme
-- Two small gold five-pointed stars centered directly above the shield, evenly spaced
-- The shield contains simple abstract geometric lines only — no real-world logos, no text, no letters
-- The badge is cleanly heat-pressed onto the white fabric — sharp edges, no blurring
-- No sportswear manufacturer logo appears anywhere near or on the badge
-- No additional badge, patch, or logo anywhere else on the jersey
-`.trim();
+Emotion:
+confident, proud, elite, composed.
 
-  const NEGATIVE_PROMPT_SOCCER = `
-STRICTLY FORBIDDEN — do not include any of the following:
-- Nike swoosh or Nike logo anywhere
-- USWNT crest, USA Soccer badge, or any national federation crest on the left chest
-- Player numbers on front or back of jersey
-- Adidas, Puma, or any other sportswear brand logo
-- Stripes, sublimation patterns, or graphic designs on the jersey body
-- Extra players, extra dogs, duplicated limbs, malformed paws, distorted muzzle
-- Altered coat pattern, breed drift, cartoon eyes, oversized head
-- Text, poster captions, watermarks, border frames, fantasy armor
-- Random sponsorships, fake badges, warped crest, incorrect number of stars
-- Chaotic foreground clutter
-- Cropped ears or cropped face
-- Dog reduced to a small subject in a wide stadium shot
-- Background overpowering the dog
-`.trim();
-
-  const PERSONA_PROMPT = `
-Persona direction: place the dog on a professional outdoor soccer pitch inside a packed modern stadium during a major international match atmosphere.
-Environment: premium stadium setting with a visible goal behind the dog, cheering supporters, waving US flags and scarves, high-energy match atmosphere, soft crowd blur for depth, and a polished championship-game feel.
-Composition: the dog is centered and dominant in the frame. Use a slightly low camera angle for a heroic sports-poster perspective. The goal should remain visible in the background. A match ball may sit near the dog's feet if compositionally helpful.
-Expression: confident, proud, alert, competitive, composed, spirited.
-Mood: elite tournament energy, premium sports campaign quality, patriotic crowd atmosphere, heroic but believable, highly shareable, crisp and editorial.
-Lighting: use bright natural stadium lighting or warm golden-hour sports-campaign lighting. Keep highlights crisp, shadows realistic, and the dog clearly separated from the background.
-Single dog only. Square 1:1 composition.
-`.trim();
-
-  const VARIANTS = {
-    uswt_tst_real_heroic_goalmouth: `
-Render as hyper-realistic premium sports photography.
-Place the dog standing confidently on lush professional pitch grass directly in front of a goal.
-Use a slightly low angle for heroic presence.
-Crowd behind the goal should be softly blurred, with visible US flags and scarves in motion.
-Keep the dog sharply focused and visually dominant.
-The jersey must be physically realistic with clean white performance fabric, centered TST crest, and exactly two stars above the crest.
-No additional logos or branding anywhere on the jersey.
+Dog sharply focused and visually dominant.
 `.trim(),
-    uswt_tst_real_matchday_captain: `
-Render as a premium editorial sports portrait.
-Frame the dog in a composed captain-like stance on the field, with the stadium crowd and goal visible behind.
-The dog should feel confident, calm, and ready for a major match.
-Use a strong chest-forward posture to clearly showcase the centered crest placement.
-Maintain clean jersey structure and realistic fabric behavior.
-Preserve absolute identity fidelity from the uploaded dog photo.
-No additional branding beyond the centered crest and two stars.
+
+  uswt_tst_real_matchday_captain: `
+Premium editorial sports portrait.
+
+Dog in a composed captain-like stance with the stadium crowd and goal visible behind.
+Strong chest-forward posture to showcase the jersey front clearly.
+A soccer ball may rest naturally near one front paw if compositionally helpful.
+
+Emotion:
+calm, leadership, game-ready, controlled.
 `.trim(),
-    uswt_tst_real_golden_hour_pitch: `
-Render as high-end golden-hour sports campaign photography.
-Use warm cinematic light across the field with a packed crowd softly blurred in the background.
-The dog stands powerfully near the goal with premium subject separation and realistic field texture.
-A soccer ball may appear near the front paws if it improves the composition.
-The jersey must look physically real with crisp white performance fabric, centered TST crest, and exactly two stars above it.
-Maintain elite realism and strong emotional presence.
-No additional logos or branding.
+
+  uswt_tst_real_victory: `
+Cinematic victory moment.
+
+Dog standing powerfully near the goal.
+Subtle confetti in the air and crowd motion in the background.
+Warm golden-hour lighting with premium subject separation.
+
+Emotion:
+triumphant, powerful, emotional.
+
+Effects must remain subtle and realistic.
+The dog must remain the dominant focal point.
 `.trim()
-  };
+};
 
-  function buildPrompt(variantId) {
-    return [
-      BASE_PROMPT,
-      GLOBAL_CINEMATIC_LAYER,
-      GLOBAL_REAL_STYLE,
-      GLOBAL_SOCCER_JERSEY_DIRECTIVES,
-      SOCCER_CREST_FIDELITY,
-      PERSONA_PROMPT,
-      VARIANTS[variantId],
-      NEGATIVE_PROMPT_SOCCER
-    ].filter(Boolean).join('\n\n');
-  }
+function buildDogstarPrompt(variantId) {
+  const variant =
+    DOGSTAR_VARIANTS[variantId] ||
+    DOGSTAR_VARIANTS.uswt_tst_real_heroic_goalmouth;
+
+  return [
+    DOGSTAR_BASE_LOCK,
+    DOGSTAR_ENVIRONMENT,
+    variant,
+    DOGSTAR_NEGATIVE
+  ].join('\n\n');
+}
 
   // ── UPLOAD ──
   const fileInput = document.getElementById('fileInput');
