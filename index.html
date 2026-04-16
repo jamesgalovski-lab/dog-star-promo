@@ -537,169 +537,185 @@
   let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
 
   // ── PROMPTS (from your index.js) ──
-const DOGSTAR_BASE_LOCK = `
-Create a high-quality square poster portrait of the same dog from the input photo.
+// ======================================
+// NOBL DOGSTAR — CLEAN GENERATION + OVERLAY
+// ======================================
 
-Treat the input photo as the definitive identity reference for the dog.
-The generated dog must clearly be the same individual dog from the uploaded photo.
 
-Strictly preserve:
-- exact coat pattern
-- exact facial markings
-- fur colors
-- muzzle shape
+// ---------- PROMPT ----------
+const DOGSTAR_PROMPT = `
+Create a realistic photograph of the SAME dog from the uploaded image.
+
+The dog must remain completely natural:
+- natural posture (on all fours or seated)
+- no human stance
+- no anthropomorphism
+- no human-like posing
+
+Preserve exact identity:
+- coat pattern
+- facial markings
 - eye shape and color
-- ear shape
-- facial proportions
-- head shape
-- overall expression
+- muzzle and ear structure
+- proportions
 
-Do not redesign, idealize, stylize, or substitute the dog with a generic breed example.
-The dog must remain anatomically believable and immediately recognizable as the same uploaded dog.
+The dog is wearing a completely plain white soccer jersey.
 
-Single dog only.
-Square 1:1 composition.
-The dog must remain the dominant subject in the frame.
+CRITICAL:
+The jersey must be completely blank.
+- no logos
+- no crests
+- no symbols
+- no text
+- no numbers
+- no branding of any kind
 
-The dog is wearing a professional white soccer jersey:
-- modern athletic fit
-- realistic fabric tension, seams, stitching, and subtle wrinkles
-- tailored naturally to the dog's body
-- not oversized
-- not costume-like
-
-Crest requirements are critical:
-- one centered shield-shaped crest on the chest
-- clean, sharp, symmetrical geometry
-- navy blue, red, white, and light gray color palette
-- large bold "US" at top of crest
-- centered soccer ball integrated into a winged American-flag-style banner
-- curved navy ribbon below with "US WOMEN" in white uppercase text
-- exactly TWO stars above the crest, centered and evenly spaced
-- no distortion, no warping, no redesign
-
-No Nike logo.
-No Adidas logo.
-No Puma logo.
-No NOBL logo.
-No sponsors.
-No extra text.
-No player number.
-No additional branding.
-
-Do not add extra dogs, duplicate features, extra limbs, distorted anatomy,
-cropped face, cropped ears, clutter, poster text, captions, watermarks, borders, or frames.
-
-Render as hyper-realistic professional sports photography.
-`.trim();
-
-const DOGSTAR_ENVIRONMENT = `
-Place the dog on a professional outdoor soccer pitch inside a packed modern stadium.
+The jersey should look like clean athletic fabric:
+- realistic seams
+- natural wrinkles
+- correct fit on a dog (not tight, not oversized)
 
 Environment:
-- visible goal behind the dog
-- cheering crowd softly blurred for depth
-- waving US flags and scarves
-- premium international match atmosphere
-
-Composition:
-- dog centered and dominant
-- slightly low camera angle for heroic sports-poster presence
+- real soccer field
+- goal in background
+- stadium softly blurred
 
 Lighting:
-- bright natural stadium lighting or warm golden-hour sports lighting
-- clean highlights
-- realistic shadows
-- strong separation between dog and background
+- natural daylight or soft stadium lighting
+- no cinematic effects
 
-The background must never overpower the dog.
-`.trim();
+The dog must be centered and dominant in a square 1:1 composition.
+`;
 
-const DOGSTAR_NEGATIVE = `
-STRICTLY DO NOT RENDER:
-- extra dogs
-- extra players
-- duplicated limbs
-- distorted anatomy
-- altered coat pattern
-- breed drift
-- cartoon or illustrated styling
-- oversized head
-- warped muzzle
-- cropped ears
-- cropped face
-- dog as a small subject in the frame
 
-STRICTLY DO NOT ADD:
-- Nike swoosh
-- Adidas logo
-- Puma logo
-- Under Armour logo
-- NOBL logo
-- sponsor marks
-- random text
-- poster captions
-- watermarks
-- frame borders
+// ---------- MAIN HANDLER ----------
+export async function handleDogstarPreview(request, env, reqId) {
+  const body = await request.json().catch(() => null);
+  if (!body) {
+    return json(400, { error: "Invalid JSON body.", reqId });
+  }
 
-STRICTLY DO NOT BREAK:
-- crest symmetry
-- crest readability
-- two-star requirement
-- centered chest placement
-`.trim();
+  const imageBase64 = body?.image_base64;
+  if (!imageBase64) {
+    return json(400, { error: "image_base64 is required.", reqId });
+  }
 
-const DOGSTAR_VARIANTS = {
-  uswt_tst_real_heroic_goalmouth: `
-Heroic sports poster composition.
+  // ---------- GENERATE IMAGE ----------
+  const aiRes = await fetch("https://api.openai.com/v1/images/edits", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`
+    },
+    body: createFormData(imageBase64, DOGSTAR_PROMPT)
+  });
 
-Dog standing confidently on lush pitch grass directly in front of the goal.
-Use a slightly low camera angle for strong heroic presence.
-Crowd behind goal softly blurred with flags in motion.
+  if (!aiRes.ok) {
+    const err = await aiRes.text();
+    return json(500, { error: "AI generation failed", details: err, reqId });
+  }
 
-Emotion:
-confident, proud, elite, composed.
+  const aiJson = await aiRes.json();
+  const generatedBase64 = aiJson.data?.[0]?.b64_json;
 
-Dog sharply focused and visually dominant.
-`.trim(),
+  if (!generatedBase64) {
+    return json(500, { error: "No image returned from AI", reqId });
+  }
 
-  uswt_tst_real_matchday_captain: `
-Premium editorial sports portrait.
+  // ---------- OVERLAY NUMBER ----------
+  const finalImageBase64 = await overlayNumber10(generatedBase64);
 
-Dog in a composed captain-like stance with the stadium crowd and goal visible behind.
-Strong chest-forward posture to showcase the jersey front clearly.
-A soccer ball may rest naturally near one front paw if compositionally helpful.
+  return json(200, {
+    image_base64: finalImageBase64,
+    reqId
+  });
+}
 
-Emotion:
-calm, leadership, game-ready, controlled.
-`.trim(),
 
-  uswt_tst_real_victory: `
-Cinematic victory moment.
+// ---------- FORM DATA BUILDER ----------
+function createFormData(imageBase64, prompt) {
+  const form = new FormData();
 
-Dog standing powerfully near the goal.
-Subtle confetti in the air and crowd motion in the background.
-Warm golden-hour lighting with premium subject separation.
+  const byteCharacters = atob(imageBase64);
+  const byteNumbers = new Array(byteCharacters.length)
+    .fill(0)
+    .map((_, i) => byteCharacters.charCodeAt(i));
+  const byteArray = new Uint8Array(byteNumbers);
 
-Emotion:
-triumphant, powerful, emotional.
+  const blob = new Blob([byteArray], { type: "image/png" });
 
-Effects must remain subtle and realistic.
-The dog must remain the dominant focal point.
-`.trim()
-};
+  form.append("image", blob, "input.png");
+  form.append("prompt", prompt);
+  form.append("size", "1024x1024");
 
-function buildDogstarPrompt(variantId) {
-  const variant =
-    DOGSTAR_VARIANTS[variantId] ||
-    DOGSTAR_VARIANTS.uswt_tst_real_heroic_goalmouth;
+  return form;
+}
 
-  return [
-    DOGSTAR_BASE_LOCK,
-    DOGSTAR_ENVIRONMENT,
-    variant,
-    DOGSTAR_NEGATIVE
-  ].join('\n\n');
+
+// ---------- OVERLAY FUNCTION ----------
+async function overlayNumber10(base64Image) {
+  const img = await loadImageFromBase64(base64Image);
+
+  const canvas = new OffscreenCanvas(img.width, img.height);
+  const ctx = canvas.getContext("2d");
+
+  // draw base image
+  ctx.drawImage(img, 0, 0);
+
+  // ---------- POSITIONING ----------
+  const centerX = canvas.width / 2;
+
+  // chest area heuristic (~60% height)
+  const chestY = canvas.height * 0.62;
+
+  // font size scales with image
+  const fontSize = canvas.width * 0.18;
+
+  ctx.font = `bold ${fontSize}px Arial`;
+  ctx.fillStyle = "#0A2342"; // navy
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText("10", centerX, chestY);
+
+  // export
+  const blob = await canvas.convertToBlob({ type: "image/png" });
+  const buffer = await blob.arrayBuffer();
+
+  return arrayBufferToBase64(buffer);
+}
+
+
+// ---------- HELPERS ----------
+async function loadImageFromBase64(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], { type: "image/png" });
+  const bitmap = await createImageBitmap(blob);
+  return bitmap;
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+
+  return btoa(binary);
+}
+
+function json(status, data) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" }
+  });
 }
 
   // ── UPLOAD ──
