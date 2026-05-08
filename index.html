@@ -408,24 +408,23 @@
     <div class="section-label">Choose Your Scene</div>
 
     <div class="variants">
-      <button class="variant-btn active" data-id="uswt_tst_real_heroic_goalmouth" onclick="selectVariant(this)">
+      <button class="variant-btn active" data-id="dogstar_captain" onclick="selectVariant(this)">
+        <span class="variant-check">✓</span>
+        <span class="variant-name">The Captain</span>
+        <span class="variant-desc">Pre-game armband moment — your dog leads the squad</span>
+      </button>
+
+      <button class="variant-btn" data-id="dogstar_goalscorer" onclick="selectVariant(this)">
         <span class="variant-check">✓</span>
         <span class="variant-name">The Goalscorer</span>
-        <span class="variant-desc">Standing proud in front of the net, crowd roaring behind</span>
+        <span class="variant-desc">World Cup trophy, confetti, championship energy</span>
       </button>
 
-      <button class="variant-btn" data-id="uswt_tst_real_matchday_captain" onclick="selectVariant(this)">
+      <button class="variant-btn" data-id="dogstar_team" onclick="selectVariant(this)">
         <span class="variant-check">✓</span>
-        <span class="variant-name">Matchday Portrait</span>
-        <span class="variant-desc">Composed captain pose, editorial match-day portrait</span>
-      </button>
-
-      <button class="variant-btn" data-id="uswt_tst_real_golden_hour" onclick="selectVariant(this)">
-        <span class="variant-check">✓</span>
-        <span class="variant-name">Golden Hour</span>
-        <span class="variant-desc">Warm cinematic light, victory moment, pitch at dusk</span>
-      </button>
-    </div>
+        <span class="variant-name">The Team Photo</span>
+        <span class="variant-desc">Your dog front and center with the squad behind</span>
+      </button>    </div>
 
     <!-- GENERATE -->
     <button class="generate-btn" id="generateBtn" onclick="generate()">
@@ -476,7 +475,7 @@
   // ── STATE ──
   let imageBase64 = null;
   let imageMediaType = 'image/jpeg';
-  let selectedVariant = 'uswt_tst_real_heroic_goalmouth';
+let selectedVariant = 'dogstar_captain';
 
   // ── UPLOAD ──
   const fileInput    = document.getElementById('fileInput');
