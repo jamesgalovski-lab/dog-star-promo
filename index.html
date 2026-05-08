@@ -672,9 +672,52 @@ let selectedVariant = 'dogstar_captain';
     const errorEl = document.getElementById('errorMsg');
     errorEl.className = 'error-msg';
 
+    // Clear any previous field errors
+    document.getElementById('dogName').classList.remove('error');
+    document.getElementById('userEmail').classList.remove('error');
+
+    // Validate photo
     if (!imageBase64) {
       showError('Please upload a photo of your dog first.');
       return;
+    }
+
+    // Validate dog name
+    const dogName = document.getElementById('dogName').value.trim();
+    if (!dogName) {
+      document.getElementById('dogName').classList.add('error');
+      showError('Please enter your dog\'s name.');
+      return;
+    }
+
+    // Validate email
+    const userEmail = document.getElementById('userEmail').value.trim();
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail);
+    if (!userEmail || !emailValid) {
+      document.getElementById('userEmail').classList.add('error');
+      showError('Please enter a valid email address.');
+      return;
+    }
+
+    // Capture opt-in
+    const noblOptin = document.getElementById('noblOptin').checked;
+
+    // Submit to Netlify Forms (non-blocking)
+    try {
+      await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          "form-name":  "dogstar-leads",
+          "dog_name":   dogName,
+          "email":      userEmail,
+          "optin":      noblOptin ? "yes" : "no",
+          "scene":      selectedVariant
+        }).toString()
+      });
+      console.log("[DogStar] Lead captured:", dogName, userEmail, noblOptin);
+    } catch (err) {
+      console.warn("[DogStar] Form submit failed:", err?.message);
     }
 
     document.getElementById('generateBtn').disabled = true;
@@ -687,9 +730,9 @@ let selectedVariant = 'dogstar_captain';
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image_base64:      imageBase64,
-          image_media_type:  imageMediaType,
-          variant_id:        selectedVariant
+          image_base64:     imageBase64,
+          image_media_type: imageMediaType,
+          variant_id:       selectedVariant
         })
       });
 
