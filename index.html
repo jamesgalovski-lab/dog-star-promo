@@ -561,9 +561,14 @@
         </button>
       </div>
     </div>
-
+<!-- NETLIFY FORM — hidden, used for form detection at deploy time -->
+    <form name="dogstar-leads" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="dog_name" />
+      <input type="email" name="email" />
+      <input type="text" name="optin" />
+      <input type="text" name="scene" />
+    </form>
   </div><!-- /card -->
-
 </div><!-- /wrap -->
 
 <footer>
