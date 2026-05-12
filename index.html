@@ -758,21 +758,46 @@ let selectedVariant = 'dogstar_captain';
   }
 
   function showResult(objectUrl) {
-    const resultImg  = document.getElementById('resultImg');
-    const downloadBtn = document.getElementById('downloadBtn');
-    resultImg.src = objectUrl;
-    downloadBtn.href = objectUrl;
-    downloadBtn.download = 'dogstar.png';
-    downloadBtn.removeAttribute('target');
-    document.getElementById('result').className = 'result active';
-    document.getElementById('generateBtn').disabled = false;
-  }
+  const resultImg   = document.getElementById('resultImg');
+  const downloadBtn = document.getElementById('downloadBtn');
 
-  function retryGenerate() {
-    document.getElementById('result').className = 'result';
-    document.getElementById('errorMsg').className = 'error-msg';
-    document.getElementById('generateBtn').disabled = false;
-  }
+  const overlayUrl = 'nobl-overlay-1024.png'; // serve this file from your Netlify root
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width  = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+
+    // Draw the generated dog image
+    ctx.drawImage(img, 0, 0);
+
+    // Draw the NOBL overlay on top
+    const overlay = new Image();
+    overlay.onload = () => {
+      ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);
+      const composited = canvas.toDataURL('image/png');
+      resultImg.src = composited;
+      downloadBtn.href = composited;
+      downloadBtn.download = 'dogstar.png';
+      downloadBtn.removeAttribute('target');
+      document.getElementById('result').className = 'result active';
+      document.getElementById('generateBtn').disabled = false;
+    };
+    overlay.onerror = () => {
+      // Overlay failed — show raw image anyway
+      resultImg.src = objectUrl;
+      downloadBtn.href = objectUrl;
+      downloadBtn.download = 'dogstar.png';
+      downloadBtn.removeAttribute('target');
+      document.getElementById('result').className = 'result active';
+      document.getElementById('generateBtn').disabled = false;
+    };
+    overlay.src = overlayUrl;
+  };
+  img.src = objectUrl;
+}
 </script>
 
 </body>
