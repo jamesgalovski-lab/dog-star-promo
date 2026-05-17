@@ -609,22 +609,47 @@ let selectedVariant = 'dogstar_captain';
     if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
   });
 
-  function handleFile(file) {
-    if (!file.type.startsWith('image/')) return;
-    if (file.size > 10 * 1024 * 1024) {
-      showError('Image is too large. Please use a photo under 10 MB.');
+  async function handleFile(file) {
+  if (!file.type.startsWith('image/')) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showError('Image is too large. Please use a photo under 10 MB.');
+    return;
+  }
+
+  // Convert HEIC/HEIF to JPEG before anything else
+  const isHeic = file.type === 'image/heic' || 
+                 file.type === 'image/heif' || 
+                 file.name.toLowerCase().endsWith('.heic') || 
+                 file.name.toLowerCase().endsWith('.heif');
+
+  if (isHeic) {
+    try {
+      showStatus('Converting photo format…'); // show a loading indicator
+      const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
+      file = new File([blob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+    } catch (err) {
+      showError('Could not convert your photo. Please export it as JPEG from your Photos app and try again.');
       return;
     }
-    imageMediaType = file.type;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target.result;
-      imageBase64 = dataUrl.split(',')[1];
-      previewImg.src = dataUrl;
-      uploadPreview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
   }
+
+  // Only allow formats the API accepts
+  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowed.includes(file.type.toLowerCase())) {
+    showError('Please use a JPEG, PNG, or WebP photo.');
+    return;
+  }
+
+  imageMediaType = 'image/jpeg'; // normalize — always send as jpeg after conversion
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    imageBase64 = dataUrl.split(',')[1];
+    previewImg.src = dataUrl;
+    uploadPreview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
 
   function removeImage(e) {
     e.stopPropagation();
